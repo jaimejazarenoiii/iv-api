@@ -6,9 +6,9 @@ module Api
       # Handle authentication failures
       def failure
         render json: {
-          status: { 
+          status: {
             code: 401,
-            message: 'Login failed. Please check your credentials.' 
+            message: 'Login failed. Please check your credentials.'
           },
           errors: ['Invalid email or password.']
         }, status: :unauthorized
@@ -19,7 +19,7 @@ module Api
       def respond_with(resource, _opts = {})
         # Manually generate JWT token
         token = generate_jwt_token(resource)
-        
+
         render json: {
           status: { code: 200, message: 'Logged in successfully.' },
           data: {
@@ -50,4 +50,3 @@ module Api
     end
   end
 end
-

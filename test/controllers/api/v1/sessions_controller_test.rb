@@ -19,12 +19,12 @@ class Api::V1::SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     json = JSON.parse(response.body)
-    
+
     assert_equal 200, json["status"]["code"]
     assert_equal "Logged in successfully.", json["status"]["message"]
     assert_equal @user.email, json["data"]["user"]["email"]
     assert_equal @user.id, json["data"]["user"]["id"]
-    
+
     # Should have JWT token in response body
     assert json["data"]["token"].present?
     assert json["data"]["token"].is_a?(String)
@@ -41,7 +41,7 @@ class Api::V1::SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
     json = JSON.parse(response.body)
-    
+
     assert_equal 401, json["status"]["code"]
     assert_includes json["errors"], "Invalid email or password."
   end
@@ -56,14 +56,14 @@ class Api::V1::SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
     json = JSON.parse(response.body)
-    
+
     assert_equal 401, json["status"]["code"]
     assert_includes json["errors"], "Invalid email or password."
   end
 
   test "should track sign in count" do
     initial_count = @user.sign_in_count
-    
+
     post login_url, params: {
       user: {
         email: @user.email,
@@ -117,4 +117,3 @@ class Api::V1::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 401, json["status"]["code"]
   end
 end
-

@@ -14,12 +14,12 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     json = JSON.parse(response.body)
-    
+
     assert_equal 200, json["status"]["code"]
     assert_equal "Signed up successfully. Please login to get your token.", json["status"]["message"]
     assert_equal "newuser@example.com", json["data"]["user"]["email"]
     assert json["data"]["user"]["id"].present?
-    
+
     # No token on signup
     assert_nil json["data"]["token"]
   end
@@ -37,7 +37,7 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     json = JSON.parse(response.body)
-    
+
     assert_equal 422, json["status"]["code"]
     assert json["errors"].present?
   end
@@ -96,4 +96,3 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "free", user.subscription.plan
   end
 end
-

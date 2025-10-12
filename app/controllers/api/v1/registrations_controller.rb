@@ -2,15 +2,15 @@ module Api
   module V1
     class RegistrationsController < Devise::RegistrationsController
       respond_to :json
-      
+
       # Override Devise's authenticate_user! requirement
       prepend_before_action :skip_authentication, only: [:create]
-      
+
       def create
         build_resource(sign_up_params)
 
         resource.save
-        
+
         if resource.persisted?
           # Don't sign in - just return the response with JWT in header
           respond_with resource
@@ -37,11 +37,11 @@ module Api
           # Log errors for debugging
           Rails.logger.error "User creation failed: #{resource.errors.full_messages.join(', ')}"
           Rails.logger.error "Received params: #{params.inspect}"
-          
+
           render json: {
-            status: { 
+            status: {
               code: 422,
-              message: "User couldn't be created successfully. #{resource.errors.full_messages.to_sentence}" 
+              message: "User couldn't be created successfully. #{resource.errors.full_messages.to_sentence}"
             },
             errors: resource.errors.full_messages
           }, status: :unprocessable_entity
@@ -58,4 +58,3 @@ module Api
     end
   end
 end
-
