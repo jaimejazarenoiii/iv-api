@@ -1,16 +1,34 @@
-class Storage < ApplicationRecord
+class Space < ApplicationRecord
   belongs_to :user
-  belongs_to :space, optional: true
-  belongs_to :parent, class_name: 'Storage', optional: true
-  has_many :children, class_name: 'Storage', foreign_key: 'parent_id', dependent: :destroy
-  has_many :items, dependent: :destroy
+  has_many :storages, dependent: :destroy
+  has_many :items, through: :storages
   
   # Active Storage
   has_one_attached :image
 
   validates :name, presence: true, length: { maximum: 100 }
   validates :description, length: { maximum: 500 }, allow_blank: true
+  validates :space_type, presence: true
   validate :acceptable_image
+
+  # Common space types
+  SPACE_TYPES = %w[
+    bedroom
+    kitchen
+    bathroom
+    living_room
+    dining_room
+    garage
+    basement
+    attic
+    office
+    closet
+    outdoor
+    storage_unit
+    other
+  ].freeze
+
+  validates :space_type, inclusion: { in: SPACE_TYPES }
 
   # Get image URL
   def image_url
@@ -34,4 +52,5 @@ class Storage < ApplicationRecord
     end
   end
 end
+
 

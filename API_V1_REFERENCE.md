@@ -161,24 +161,62 @@ curl -X DELETE http://localhost:3000/api/v1/logout \
 
 ---
 
-## Resource Endpoints (Coming Soon)
+## Resource Endpoints
 
-The following endpoints will be available for managing your pantry:
+### Authorization
+
+All resource endpoints require authentication. Include the JWT token in the `Authorization` header:
+
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Available Endpoints:
+
+### Profile
+- `GET /api/v1/profile` - Get current user's profile
+- `PATCH /api/v1/profile` - Update profile information
+- `DELETE /api/v1/profile/image` - Delete profile image
+
+**Profile Fields:**
+- `first_name`, `last_name`, `middle_name` (optional text fields)
+- `gender` (optional: `male`, `female`, `other`, `prefer_not_to_say`)
+- `profile_image` (optional file upload: JPEG, PNG, GIF, WebP, max 5MB)
+
+See [PROFILE_GUIDE.md](PROFILE_GUIDE.md) for detailed usage examples.
+
+**Image Upload Support:**
+- All entities (spaces, storages, items) support image uploads
+- Supported formats: JPEG, PNG, GIF, WebP (max 5MB)
+- Images can be uploaded via PATCH requests using multipart/form-data
+- Images can be deleted via DELETE endpoints
+- See [IMAGE_UPLOAD_GUIDE.md](IMAGE_UPLOAD_GUIDE.md) for detailed examples
+
+### Spaces
+- `GET /api/v1/spaces` - List all your spaces
+- `POST /api/v1/spaces` - Create a new space
+- `GET /api/v1/spaces/:id` - Get space details
+- `PATCH /api/v1/spaces/:id` - Update a space (supports image upload)
+- `DELETE /api/v1/spaces/:id` - Delete a space
+- `DELETE /api/v1/spaces/:id/image` - Delete space image
 
 ### Storages
 - `GET /api/v1/storages` - List all your storage locations
 - `POST /api/v1/storages` - Create a new storage location
 - `GET /api/v1/storages/:id` - Get storage details
-- `PATCH /api/v1/storages/:id` - Update a storage
+- `PATCH /api/v1/storages/:id` - Update a storage (supports image upload)
 - `DELETE /api/v1/storages/:id` - Delete a storage
+- `DELETE /api/v1/storages/:id/image` - Delete storage image
 
 ### Items
 - `GET /api/v1/items` - List all your items
 - `POST /api/v1/items` - Add a new item
 - `GET /api/v1/items/:id` - Get item details
-- `PATCH /api/v1/items/:id` - Update an item
+- `PATCH /api/v1/items/:id` - Update an item (supports image upload)
 - `DELETE /api/v1/items/:id` - Delete an item
 - `GET /api/v1/items/low_stock` - Get items below minimum quantity
+- `GET /api/v1/items/out_of_stock` - Get items below out-of-stock threshold
+- `DELETE /api/v1/items/:id/image` - Delete item image
 
 ### Purchase Sessions
 - `GET /api/v1/purchase_sessions` - List all purchase sessions

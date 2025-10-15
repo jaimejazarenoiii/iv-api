@@ -47,6 +47,7 @@ module Api
       def generate_jwt_token(resource)
         Warden::JWTAuth::UserEncoder.new.call(resource, :user, nil).first
       end
+
     end
   end
 end

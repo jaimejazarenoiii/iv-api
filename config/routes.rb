@@ -5,11 +5,37 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
-      # Your API endpoints here
-      # Example:
-      # resources :storages
-      # resources :items
-      # resources :purchase_sessions
+      # Resource endpoints
+      resources :spaces, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          delete :image, action: :destroy_image
+        end
+      end
+      
+      resources :storages, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          delete :image, action: :destroy_image
+        end
+      end
+
+      resources :items, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+          get :low_stock
+          get :out_of_stock
+        end
+        member do
+          delete :image, action: :destroy_image
+        end
+      end
+
+      resources :purchase_sessions, only: [:index, :show, :create, :update, :destroy]
+
+      resource :subscription, only: [:show, :update]
+
+      # Profile endpoints
+      resource :profile, only: [:show, :update] do
+        delete :image, action: :destroy_image
+      end
     end
   end
   
