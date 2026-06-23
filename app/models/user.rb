@@ -11,6 +11,7 @@ class User < ApplicationRecord
   has_many :items, dependent: :destroy
   has_many :purchase_sessions, dependent: :destroy
   has_one :subscription, dependent: :destroy
+  has_many :categories, dependent: :destroy
   
   # Active Storage
   has_one_attached :profile_image
@@ -37,12 +38,62 @@ class User < ApplicationRecord
     Rails.application.routes.url_helpers.rails_blob_url(profile_image, only_path: true)
   end
 
+  LIMITABLE_RESOURCES = {
+    spaces: {
+      association: :spaces,
+      limit_attribute: :space_limit,
+      label: "space"
+    },
+    storages: {
+      association: :storages,
+      limit_attribute: :storage_limit,
+      label: "storage"
+    },
+    items: {
+      association: :items,
+      limit_attribute: :item_limit,
+      label: "item"
+    }
+  }.freeze
+
+  def limit_value_for(resource)
+    mapping = LIMITABLE_RESOURCES[resource]
+    return nil unless mapping
+
+    subscription&.public_send(mapping[:limit_attribute])
+  end
+
+  def limit_reached?(resource)
+    mapping = LIMITABLE_RESOURCES[resource]
+    return false unless mapping
+
+    limit = limit_value_for(resource)
+    return false if limit.nil?
+
+    send(mapping[:association]).count >= limit
+  end
+
+  def limit_label_for(resource)
+    LIMITABLE_RESOURCES.dig(resource, :label)
+  end
+
+  def limit_error_message(resource)
+    limit = limit_value_for(resource)
+    label = limit_label_for(resource) || resource.to_s.singularize
+    return nil if limit.nil?
+
+    pluralized_label = limit == 1 ? label : ActiveSupport::Inflector.pluralize(label)
+    "Your current plan allows up to #{limit} #{pluralized_label}. Upgrade your subscription to increase this limit."
+  end
+
   private
 
   def assign_default_subscription
     create_subscription!(
       plan: :free,
-      pantry_limit: 10,
+      space_limit: 1,
+      storage_limit: 3,
+      item_limit: 10,
       started_at: Time.current
     )
   end

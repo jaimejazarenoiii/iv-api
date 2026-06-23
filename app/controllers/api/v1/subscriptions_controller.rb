@@ -51,7 +51,9 @@ module Api
         {
           id: subscription.id,
           plan: subscription.plan,
-          pantry_limit: subscription.pantry_limit,
+          space_limit: subscription.space_limit,
+          storage_limit: subscription.storage_limit,
+          item_limit: subscription.item_limit,
           started_at: subscription.started_at,
           expires_at: subscription.expires_at,
           active: subscription.active?,

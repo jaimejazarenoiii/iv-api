@@ -8,7 +8,7 @@ class Api::V1::SpacesControllerTest < ActionDispatch::IntegrationTest
       password_confirmation: "password123"
     )
     @token = get_auth_token(@user)
-    @space = @user.spaces.create!(name: "Kitchen", space_type: "kitchen", description: "Main kitchen area")
+    @space = @user.spaces.create!(name: "Kitchen", description: "Main kitchen area")
   end
 
   test "should get index" do
@@ -28,15 +28,15 @@ class Api::V1::SpacesControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     assert_equal 200, json["status"]["code"]
     assert_equal @space.name, json["data"]["space"]["name"]
-    assert_equal @space.space_type, json["data"]["space"]["space_type"]
   end
 
   test "should create space" do
+    @user.subscription.update!(space_limit: 2)
+
     assert_difference "Space.count", 1 do
       post api_v1_spaces_url, params: {
         space: {
           name: "Bedroom",
-          space_type: "bedroom",
           description: "Master bedroom"
         }
       }, headers: auth_headers(@token), as: :json
@@ -46,6 +46,22 @@ class Api::V1::SpacesControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     assert_equal 201, json["status"]["code"]
     assert_equal "Bedroom", json["data"]["space"]["name"]
+  end
+
+  test "should not create space when limit reached" do
+    assert_no_difference "Space.count" do
+      post api_v1_spaces_url, params: {
+        space: {
+          name: "Living Room",
+          description: "Main living area"
+        }
+      }, headers: auth_headers(@token), as: :json
+    end
+
+    assert_response :forbidden
+    json = JSON.parse(response.body)
+    assert_equal 403, json["status"]["code"]
+    assert_includes json["errors"].first, "allows up to 1"
   end
 
   test "should update space" do
@@ -79,20 +95,6 @@ class Api::V1::SpacesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 401, json["status"]["code"]
   end
 
-  test "should not create space with invalid type" do
-    assert_no_difference "Space.count" do
-      post api_v1_spaces_url, params: {
-        space: {
-          name: "Test Space",
-          space_type: "invalid_type"
-        }
-      }, headers: auth_headers(@token), as: :json
-    end
-
-    assert_response :unprocessable_entity
-    json = JSON.parse(response.body)
-    assert_equal 422, json["status"]["code"]
-  end
 
   test "should show space with storages when requested" do
     @space.storages.create!(user: @user, name: "Pantry")

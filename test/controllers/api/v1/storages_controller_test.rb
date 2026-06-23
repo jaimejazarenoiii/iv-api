@@ -46,6 +46,24 @@ class Api::V1::StoragesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Fridge", json["data"]["storage"]["name"]
   end
 
+  test "should not create storage when limit reached" do
+    @user.subscription.update!(storage_limit: 1)
+
+    assert_no_difference "Storage.count" do
+      post api_v1_storages_url, params: {
+        storage: {
+          name: "Closet",
+          description: "Bedroom closet"
+        }
+      }, headers: auth_headers(@token), as: :json
+    end
+
+    assert_response :forbidden
+    json = JSON.parse(response.body)
+    assert_equal 403, json["status"]["code"]
+    assert_includes json["errors"].first, "allows up to 1"
+  end
+
   test "should update storage" do
     patch api_v1_storage_url(@storage), params: {
       storage: {
@@ -67,6 +85,33 @@ class Api::V1::StoragesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     json = JSON.parse(response.body)
     assert_equal 200, json["status"]["code"]
+  end
+
+  test "should move storage under another parent" do
+    space = @user.spaces.create!(name: "Kitchen")
+    parent = @user.storages.create!(name: "Cabinet", space: space)
+
+    post move_api_v1_storage_url(@storage), params: { destination_parent_id: parent.id }, headers: auth_headers(@token), as: :json
+
+    assert_response :success
+    json = JSON.parse(response.body)
+    assert_equal 200, json["status"]["code"]
+    assert_equal parent.id, Storage.find(@storage.id).parent_id
+    assert_equal space.id, Storage.find(@storage.id).space_id
+  end
+
+  test "should move storage to top-level space" do
+    space = @user.spaces.create!(name: "Garage")
+    # Make storage a child first
+    parent = @user.storages.create!(name: "Box", space: space)
+    @storage.update!(parent: parent, space: space)
+
+    post move_api_v1_storage_url(@storage), params: { destination_space_id: space.id }, headers: auth_headers(@token), as: :json
+
+    assert_response :success
+    s = Storage.find(@storage.id)
+    assert_nil s.parent_id
+    assert_equal space.id, s.space_id
   end
 
   test "should not allow access without authentication" do

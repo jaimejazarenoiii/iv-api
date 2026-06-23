@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_14_135614) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_09_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_135614) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "categories", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", limit: 100, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "name"], name: "index_categories_on_user_id_and_name", unique: true
+    t.index ["user_id"], name: "index_categories_on_user_id"
+  end
+
+  create_table "categories_items", id: false, force: :cascade do |t|
+    t.bigint "category_id", null: false
+    t.bigint "item_id", null: false
+    t.index ["category_id", "item_id"], name: "index_categories_items_on_category_id_and_item_id", unique: true
+    t.index ["category_id"], name: "index_categories_items_on_category_id"
+    t.index ["item_id"], name: "index_categories_items_on_item_id"
+  end
+
   create_table "items", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "storage_id", null: false
@@ -62,12 +79,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_135614) do
     t.index ["user_id"], name: "index_items_on_user_id"
   end
 
-  create_table "jwt_denylists", force: :cascade do |t|
-    t.string "jti"
-    t.datetime "exp"
+  create_table "jwt_denylist", force: :cascade do |t|
+    t.string "jti", null: false
+    t.datetime "exp", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["jti"], name: "index_jwt_denylists_on_jti"
+    t.index ["jti"], name: "index_jwt_denylist_on_jti", unique: true
   end
 
   create_table "purchase_items", force: :cascade do |t|
@@ -98,12 +115,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_135614) do
   create_table "spaces", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "name", limit: 100, null: false
-    t.string "space_type", null: false
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id", "name"], name: "index_spaces_on_user_id_and_name"
-    t.index ["user_id", "space_type"], name: "index_spaces_on_user_id_and_space_type"
     t.index ["user_id"], name: "index_spaces_on_user_id"
   end
 
@@ -125,11 +140,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_135614) do
   create_table "subscriptions", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "plan", default: "free", null: false
-    t.integer "pantry_limit"
+    t.integer "storage_limit"
     t.datetime "started_at"
     t.datetime "expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "space_limit"
+    t.integer "item_limit"
     t.index ["user_id"], name: "index_subscriptions_on_user_id", unique: true
   end
 
@@ -139,13 +156,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_135614) do
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
     t.integer "sign_in_count", default: 0, null: false
     t.datetime "current_sign_in_at"
     t.datetime "last_sign_in_at"
     t.string "current_sign_in_ip"
     t.string "last_sign_in_ip"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.string "first_name", limit: 50
     t.string "last_name", limit: 50
     t.string "middle_name", limit: 50
@@ -156,6 +173,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_14_135614) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "categories", "users"
+  add_foreign_key "categories_items", "categories"
+  add_foreign_key "categories_items", "items"
   add_foreign_key "items", "storages"
   add_foreign_key "items", "users"
   add_foreign_key "purchase_items", "items"

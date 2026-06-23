@@ -56,8 +56,8 @@ Track **anything, anywhere** - from food in your kitchen to clothes in your bedr
 ### 💳 Subscription Management
 - **Get subscription** - `GET /api/v1/subscription`
 - **Update subscription** - `PATCH /api/v1/subscription`
-- Free plan (10 pantry limit) automatically created on signup
-- Premium plan (unlimited pantries)
+- Free plan (1 space, 3 storages, 10 items) automatically created on signup
+- Premium plan (unlimited spaces, storages, and items)
 
 ---
 

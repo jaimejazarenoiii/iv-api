@@ -27,13 +27,17 @@ class SubscriptionTest < ActiveSupport::TestCase
 
   test "should set defaults on create for free plan" do
     sub = @user.create_subscription!(plan: :free)
-    assert_equal 10, sub.pantry_limit
+    assert_equal 1, sub.space_limit
+    assert_equal 3, sub.storage_limit
+    assert_equal 10, sub.item_limit
     assert_not_nil sub.started_at
   end
 
   test "should set defaults on create for premium plan" do
     sub = @user.create_subscription!(plan: :premium)
-    assert_nil sub.pantry_limit
+    assert_nil sub.space_limit
+    assert_nil sub.storage_limit
+    assert_nil sub.item_limit
     assert_not_nil sub.started_at
   end
 

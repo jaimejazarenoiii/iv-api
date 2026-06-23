@@ -50,11 +50,13 @@ class UserTest < ActiveSupport::TestCase
     end
   end
 
-  test "should create free subscription with 10 pantry limit" do
+  test "should create free subscription with default limits" do
     @user.save
     assert_not_nil @user.subscription
     assert_equal "free", @user.subscription.plan
-    assert_equal 10, @user.subscription.pantry_limit
+    assert_equal 1, @user.subscription.space_limit
+    assert_equal 3, @user.subscription.storage_limit
+    assert_equal 10, @user.subscription.item_limit
   end
 
   test "should have many storages" do

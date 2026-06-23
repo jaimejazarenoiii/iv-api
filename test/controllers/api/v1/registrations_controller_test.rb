@@ -4,11 +4,9 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
   test "should signup with valid credentials" do
     assert_difference "User.count", 1 do
       post signup_url, params: {
-        user: {
-          email: "newuser@example.com",
-          password: "password123",
-          password_confirmation: "password123"
-        }
+        email: "newuser@example.com",
+        password: "password123",
+        password_confirmation: "password123"
       }, as: :json
     end
 
@@ -27,11 +25,9 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
   test "should not signup with invalid email" do
     assert_no_difference "User.count" do
       post signup_url, params: {
-        user: {
-          email: "invalid",
-          password: "password123",
-          password_confirmation: "password123"
-        }
+        email: "invalid",
+        password: "password123",
+        password_confirmation: "password123"
       }, as: :json
     end
 
@@ -45,11 +41,9 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
   test "should not signup with mismatched passwords" do
     assert_no_difference "User.count" do
       post signup_url, params: {
-        user: {
-          email: "test@example.com",
-          password: "password123",
-          password_confirmation: "different"
-        }
+        email: "test@example.com",
+        password: "password123",
+        password_confirmation: "different"
       }, as: :json
     end
 
@@ -67,11 +61,9 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference "User.count" do
       post signup_url, params: {
-        user: {
-          email: "existing@example.com",
-          password: "password123",
-          password_confirmation: "password123"
-        }
+        email: "existing@example.com",
+        password: "password123",
+        password_confirmation: "password123"
       }, as: :json
     end
 
@@ -83,11 +75,9 @@ class Api::V1::RegistrationsControllerTest < ActionDispatch::IntegrationTest
   test "should create subscription automatically on signup" do
     assert_difference "Subscription.count", 1 do
       post signup_url, params: {
-        user: {
-          email: "newuser@example.com",
-          password: "password123",
-          password_confirmation: "password123"
-        }
+        email: "newuser@example.com",
+        password: "password123",
+        password_confirmation: "password123"
       }, as: :json
     end
 

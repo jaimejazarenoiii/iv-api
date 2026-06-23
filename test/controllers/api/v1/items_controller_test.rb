@@ -78,6 +78,26 @@ class Api::V1::ItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Rice", json["data"]["item"]["name"]
   end
 
+  test "should not create item when limit reached" do
+    @user.subscription.update!(item_limit: 1)
+
+    assert_no_difference "Item.count" do
+      post api_v1_items_url, params: {
+        item: {
+          name: "Beans",
+          storage_id: @storage.id,
+          unit: "lbs",
+          quantity: 5
+        }
+      }, headers: auth_headers(@token), as: :json
+    end
+
+    assert_response :forbidden
+    json = JSON.parse(response.body)
+    assert_equal 403, json["status"]["code"]
+    assert_includes json["errors"].first, "allows up to 1"
+  end
+
   test "should update item" do
     patch api_v1_item_url(@item), params: {
       item: {
@@ -101,6 +121,17 @@ class Api::V1::ItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 200, json["status"]["code"]
   end
 
+  test "should move item to another storage" do
+    destination = @user.storages.create!(name: "Drawer")
+
+    post move_api_v1_item_url(@item), params: { destination_storage_id: destination.id }, headers: auth_headers(@token), as: :json
+
+    assert_response :success
+    json = JSON.parse(response.body)
+    assert_equal 200, json["status"]["code"]
+    assert_equal destination.id, Item.find(@item.id).storage_id
+  end
+
   test "should not allow access without authentication" do
     get api_v1_items_url, as: :json
 
@@ -114,6 +145,58 @@ class Api::V1::ItemsControllerTest < ActionDispatch::IntegrationTest
 
     json = JSON.parse(response.body)
     assert_includes json["data"]["item"].keys, "low_stock"
+  end
+
+  test "should create item with categories" do
+    category1 = @user.categories.create!(name: "Spices")
+    category2 = @user.categories.create!(name: "Cooking")
+
+    post api_v1_items_url, params: {
+      item: {
+        name: "Salt",
+        storage_id: @storage.id,
+        unit: "oz",
+        category_ids: [category1.id, category2.id]
+      }
+    }, headers: auth_headers(@token), as: :json
+
+    assert_response :created
+    json = JSON.parse(response.body)
+    item = Item.find(json["data"]["item"]["id"])
+    assert_equal 2, item.categories.count
+    assert_includes item.categories, category1
+    assert_includes item.categories, category2
+  end
+
+  test "should include categories in item response" do
+    category = @user.categories.create!(name: "Spices")
+    @item.categories << category
+
+    get api_v1_item_url(@item), headers: auth_headers(@token), as: :json
+
+    json = JSON.parse(response.body)
+    assert_includes json["data"]["item"].keys, "categories"
+    assert_equal 1, json["data"]["item"]["categories"].length
+    assert_equal category.id, json["data"]["item"]["categories"][0]["id"]
+    assert_equal category.name, json["data"]["item"]["categories"][0]["name"]
+  end
+
+  test "should update item categories" do
+    category1 = @user.categories.create!(name: "Spices")
+    category2 = @user.categories.create!(name: "Beverages")
+    @item.categories << category1
+
+    patch api_v1_item_url(@item), params: {
+      item: {
+        category_ids: [category2.id]
+      }
+    }, headers: auth_headers(@token), as: :json
+
+    assert_response :success
+    @item.reload
+    assert_equal 1, @item.categories.count
+    assert_includes @item.categories, category2
+    assert_not_includes @item.categories, category1
   end
 
   private

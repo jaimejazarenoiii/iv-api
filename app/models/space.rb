@@ -8,27 +8,7 @@ class Space < ApplicationRecord
 
   validates :name, presence: true, length: { maximum: 100 }
   validates :description, length: { maximum: 500 }, allow_blank: true
-  validates :space_type, presence: true
   validate :acceptable_image
-
-  # Common space types
-  SPACE_TYPES = %w[
-    bedroom
-    kitchen
-    bathroom
-    living_room
-    dining_room
-    garage
-    basement
-    attic
-    office
-    closet
-    outdoor
-    storage_unit
-    other
-  ].freeze
-
-  validates :space_type, inclusion: { in: SPACE_TYPES }
 
   # Get image URL
   def image_url
@@ -36,6 +16,23 @@ class Space < ApplicationRecord
     
     Rails.application.routes.url_helpers.rails_blob_url(image, only_path: true)
   end
+
+  public :image_url
+
+  # Count all substorages (including nested ones) for spaces
+  def total_substorages_count
+    # Only count top-level storages (those without a parent)
+    top_level_storages = storages.where(parent_id: nil)
+    top_level_storages.sum(&:substorages_count)
+  end
+
+  # Count all items including those in substorages recursively for spaces
+  def total_items_count_for_space
+    # Only count top-level storages (those without a parent)
+    top_level_storages = storages.where(parent_id: nil)
+    top_level_storages.sum(&:total_items_count)
+  end
+
 
   private
 

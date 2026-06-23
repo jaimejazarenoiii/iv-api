@@ -6,7 +6,11 @@ Complete examples for all API endpoints.
 - [Authentication](#authentication)
 - [Spaces API](#spaces-api) 🆕
 - [Storages API](#storages-api)
+- [Browse API](#browse-api)
 - [Items API](#items-api)
+- [Categories API](#categories-api)
+- [Complete Workflow: Create Item with Categories](#complete-workflow-create-item-with-categories)
+- [Move API](#move-api)
 - [Purchase Sessions API](#purchase-sessions-api)
 - [Subscription API](#subscription-api)
 
@@ -19,11 +23,9 @@ Complete examples for all API endpoints.
 curl -X POST http://localhost:3000/api/v1/signup \
   -H "Content-Type: application/json" \
   -d '{
-    "user": {
-      "email": "user@example.com",
-      "password": "password123",
-      "password_confirmation": "password123"
-    }
+    "email": "user@example.com",
+    "password": "password123",
+    "password_confirmation": "password123"
   }'
 ```
 
@@ -90,6 +92,38 @@ curl -X POST http://localhost:3000/api/v1/spaces \
       "description": "Main bedroom with walk-in closet"
     }
   }'
+```
+
+**Success Response (201):**
+```json
+{
+  "status": { "code": 201, "message": "Space created successfully." },
+  "data": {
+    "space": {
+      "id": 1,
+      "name": "Master Bedroom",
+      "description": "Main bedroom with walk-in closet",
+      "image_url": null,
+      "storages_count": 0,
+      "created_at": "2024-10-11T13:00:00.000Z",
+      "updated_at": "2024-10-11T13:00:00.000Z"
+    }
+  }
+}
+```
+
+**Error Response (403) - Limit Reached (Free Plan):**
+When a free user tries to create more than 1 space:
+```json
+{
+  "status": {
+    "code": 403,
+    "message": "Limit reached for current plan."
+  },
+  "errors": [
+    "Your current plan allows up to 1 space. Upgrade your subscription to increase this limit."
+  ]
+}
 ```
 
 ### Get Space Details (includes storages)
@@ -191,6 +225,56 @@ curl -X POST http://localhost:3000/api/v1/storages \
   }'
 ```
 
+**Success Response (201):**
+```json
+{
+  "status": { "code": 201, "message": "Storage created successfully." },
+  "data": {
+    "storage": {
+      "id": 1,
+      "name": "Kitchen Pantry",
+      "description": "Main kitchen storage area",
+      "space_id": 1,
+      "space_name": "Kitchen",
+      "parent_id": null,
+      "image_url": null,
+      "location_path": "Kitchen > Kitchen Pantry",
+      "children_count": 0,
+      "items_count": 0,
+      "created_at": "2024-10-11T13:00:00.000Z",
+      "updated_at": "2024-10-11T13:00:00.000Z"
+    }
+  }
+}
+```
+
+**Error Response (403) - Limit Reached (Free Plan):**
+When a free user tries to create more than 3 storages:
+```json
+{
+  "status": {
+    "code": 403,
+    "message": "Limit reached for current plan."
+  },
+  "errors": [
+    "Your current plan allows up to 3 storages. Upgrade your subscription to increase this limit."
+  ]
+}
+```
+
+### Create Storage via Nested Route (recommended)
+```bash
+curl -X POST http://localhost:3000/api/v1/spaces/1/storages \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "storage": {
+      "name": "Kitchen Pantry",
+      "description": "Main kitchen storage area"
+    }
+  }'
+```
+
 ### Create Storage (standalone, no space)
 ```bash
 curl -X POST http://localhost:3000/api/v1/storages \
@@ -218,9 +302,98 @@ curl -X POST http://localhost:3000/api/v1/storages \
   }'
 ```
 
-### Get Storage Details
+### Get Storage Details (with paginated sub-storages and items)
 ```bash
 curl -X GET http://localhost:3000/api/v1/storages/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "status": { "code": 200, "message": "Storage retrieved successfully." },
+  "data": {
+    "storage": {
+      "id": 1,
+      "name": "Kitchen Pantry",
+      "description": "Main kitchen storage",
+      "space_id": 1,
+      "space_name": "Kitchen",
+      "parent_id": null,
+      "image_url": null,
+      "children_count": 3,
+      "items_count": 15,
+      "children": {
+        "data": [
+          {
+            "id": 2,
+            "name": "Top Shelf",
+            "description": "Upper shelf",
+            "space_id": 1,
+            "space_name": "Kitchen",
+            "parent_id": 1,
+            "image_url": null,
+            "children_count": 0,
+            "items_count": 5,
+            "created_at": "2024-10-11T13:00:00.000Z",
+            "updated_at": "2024-10-11T13:00:00.000Z"
+          }
+        ],
+        "pagination": {
+          "current_page": 1,
+          "per_page": 10,
+          "total_count": 3,
+          "total_pages": 1,
+          "has_next_page": false,
+          "has_prev_page": false
+        }
+      },
+      "items": {
+        "data": [
+          {
+            "id": 1,
+            "name": "Olive Oil",
+            "quantity": 32.0,
+            "unit": "oz",
+            "min_quantity": 16.0,
+            "out_of_stock_threshold": null,
+            "low_stock_alert_enabled": true,
+            "out_of_stock_alert_enabled": false,
+            "expiration_date": "2025-12-31",
+            "notes": "Extra virgin",
+            "image_url": null,
+            "low_stock": false,
+            "out_of_stock": false,
+            "created_at": "2024-10-11T13:00:00.000Z",
+            "updated_at": "2024-10-11T13:00:00.000Z"
+          }
+        ],
+        "pagination": {
+          "current_page": 1,
+          "per_page": 10,
+          "total_count": 15,
+          "total_pages": 2,
+          "has_next_page": true,
+          "has_prev_page": false
+        }
+      },
+      "created_at": "2024-10-11T13:00:00.000Z",
+      "updated_at": "2024-10-11T13:00:00.000Z"
+    }
+  }
+}
+```
+
+### Get Storage Details with Pagination
+```bash
+# Get page 2 of sub-storages and page 1 of items
+curl -X GET "http://localhost:3000/api/v1/storages/1?sub_storage_page=2&items_page=1" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### List Storages within a Space (nested index)
+```bash
+curl -X GET http://localhost:3000/api/v1/spaces/1/storages \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -241,6 +414,56 @@ curl -X PATCH http://localhost:3000/api/v1/storages/1 \
 ```bash
 curl -X DELETE http://localhost:3000/api/v1/storages/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+---
+
+## Browse API
+
+Use these minimal endpoints to power the incremental selector (spaces → storages → child storages).
+
+All requests require: `-H "Authorization: Bearer YOUR_JWT_TOKEN"`
+
+### List Spaces (first step)
+```bash
+curl -X GET http://localhost:3000/api/v1/browse/spaces \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "status": { "code": 200, "message": "Spaces retrieved successfully." },
+  "data": {
+    "spaces": [
+      { "id": 1, "name": "Kitchen", "description": null, "image_url": null, "has_children": true, "storages_count": 4 }
+    ]
+  }
+}
+```
+
+### List Top‑level Storages in a Space
+```bash
+curl -X GET "http://localhost:3000/api/v1/browse/storages?space_id=1" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### List Child Storages under a Storage
+```bash
+curl -X GET "http://localhost:3000/api/v1/browse/storages?parent_id=10" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response (for either):**
+```json
+{
+  "status": { "code": 200, "message": "Storages retrieved successfully." },
+  "data": {
+    "storages": [
+      { "id": 10, "name": "Top right cabinet", "space_id": 1, "parent_id": null, "image_url": null, "has_children": true, "children_count": 3 }
+    ]
+  }
+}
 ```
 
 ---
@@ -286,6 +509,8 @@ curl -X GET http://localhost:3000/api/v1/items/low_stock \
 ```
 
 ### Create Item
+
+**Basic Item Creation:**
 ```bash
 curl -X POST http://localhost:3000/api/v1/items \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
@@ -299,6 +524,39 @@ curl -X POST http://localhost:3000/api/v1/items \
       "min_quantity": 16,
       "expiration_date": "2025-12-31",
       "notes": "Extra virgin"
+    }
+  }'
+```
+
+**Error Response (403) - Limit Reached (Free Plan):**
+When a free user tries to create more than 10 items:
+```json
+{
+  "status": {
+    "code": 403,
+    "message": "Limit reached for current plan."
+  },
+  "errors": [
+    "Your current plan allows up to 10 items. Upgrade your subscription to increase this limit."
+  ]
+}
+```
+
+**Create Item with Existing Categories:**
+```bash
+curl -X POST http://localhost:3000/api/v1/items \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "item": {
+      "name": "Olive Oil",
+      "storage_id": 1,
+      "quantity": 32,
+      "unit": "oz",
+      "min_quantity": 16,
+      "expiration_date": "2025-12-31",
+      "notes": "Extra virgin",
+      "category_ids": [1, 3]
     }
   }'
 ```
@@ -318,7 +576,12 @@ curl -X POST http://localhost:3000/api/v1/items \
       "notes": "Extra virgin",
       "storage_id": 1,
       "storage_name": "Kitchen Pantry",
+      "categories": [
+        { "id": 1, "name": "Spices" },
+        { "id": 3, "name": "Cooking Oils" }
+      ],
       "low_stock": false,
+      "out_of_stock": false,
       "created_at": "2024-10-11T13:00:00.000Z",
       "updated_at": "2024-10-11T13:00:00.000Z"
     }
@@ -331,6 +594,67 @@ curl -X POST http://localhost:3000/api/v1/items \
 curl -X GET http://localhost:3000/api/v1/items/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
+
+**Response:**
+```json
+{
+  "status": { "code": 200, "message": "Item retrieved successfully." },
+  "data": {
+    "item": {
+      "id": 1,
+      "name": "Olive Oil",
+      "quantity": 32.0,
+      "unit": "oz",
+      "min_quantity": 16.0,
+      "out_of_stock_threshold": null,
+      "low_stock_alert_enabled": true,
+      "out_of_stock_alert_enabled": false,
+      "expiration_date": "2025-12-31",
+      "notes": "Extra virgin olive oil",
+      "storage_id": 2,
+      "storage_name": "Top Shelf",
+      "image_url": "http://localhost:3000/rails/active_storage/blobs/...",
+      "location_path": "Kitchen > Pantry > Top Shelf > Olive Oil",
+      "location_array": [
+        { "type": "space", "id": 1, "name": "Kitchen" },
+        { "type": "storage", "id": 1, "name": "Pantry" },
+        { "type": "storage", "id": 2, "name": "Top Shelf" },
+        { "type": "item", "id": 1, "name": "Olive Oil" }
+      ],
+      "categories": [
+        { "id": 1, "name": "Spices" },
+        { "id": 2, "name": "Cooking Oils" }
+      ],
+      "low_stock": false,
+      "out_of_stock": false,
+      "created_at": "2024-10-11T13:00:00.000Z",
+      "updated_at": "2024-10-11T13:00:00.000Z"
+    }
+  }
+}
+```
+
+**Response Fields:**
+- `id` - Item ID
+- `name` - Item name
+- `quantity` - Current quantity (decimal)
+- `unit` - Unit of measurement (required)
+- `min_quantity` - Minimum quantity threshold for low stock alerts
+- `out_of_stock_threshold` - Threshold for out-of-stock alerts
+- `low_stock_alert_enabled` - Whether low stock alerts are enabled
+- `out_of_stock_alert_enabled` - Whether out-of-stock alerts are enabled
+- `expiration_date` - Expiration date (YYYY-MM-DD format)
+- `notes` - Item notes/description
+- `storage_id` - ID of the storage containing this item
+- `storage_name` - Name of the storage
+- `image_url` - URL to the item image (null if no image)
+- `location_path` - Breadcrumb string showing full location (e.g., "Kitchen > Pantry > Item")
+- `location_array` - Structured array of location hierarchy with type, id, and name
+- `categories` - Array of category objects with id and name
+- `low_stock` - Boolean indicating if item is below min_quantity
+- `out_of_stock` - Boolean indicating if item is below out_of_stock_threshold
+- `created_at` - Creation timestamp
+- `updated_at` - Last update timestamp
 
 ### Update Item (Update Quantity)
 ```bash
@@ -348,6 +672,275 @@ curl -X PATCH http://localhost:3000/api/v1/items/1 \
 ```bash
 curl -X DELETE http://localhost:3000/api/v1/items/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+---
+
+## Categories API
+
+**Categories** are tags/labels that can be assigned to items for organization and filtering.
+
+All requests require: `-H "Authorization: Bearer YOUR_JWT_TOKEN"`
+
+### List All Categories
+```bash
+curl -X GET http://localhost:3000/api/v1/categories \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "status": { "code": 200, "message": "Categories retrieved successfully." },
+  "data": {
+    "categories": [
+      {
+        "id": 1,
+        "name": "Spices",
+        "items_count": 5,
+        "created_at": "2024-10-11T13:00:00.000Z",
+        "updated_at": "2024-10-11T13:00:00.000Z"
+      },
+      {
+        "id": 2,
+        "name": "Cooking Oils",
+        "items_count": 3,
+        "created_at": "2024-10-11T13:00:00.000Z",
+        "updated_at": "2024-10-11T13:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+### Create Category
+```bash
+curl -X POST http://localhost:3000/api/v1/categories \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": {
+      "name": "Spices"
+    }
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": { "code": 201, "message": "Category created successfully." },
+  "data": {
+    "category": {
+      "id": 1,
+      "name": "Spices",
+      "items_count": 0,
+      "created_at": "2024-10-11T13:00:00.000Z",
+      "updated_at": "2024-10-11T13:00:00.000Z"
+    }
+  }
+}
+```
+
+### Get Category Details (with items)
+```bash
+curl -X GET http://localhost:3000/api/v1/categories/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "status": { "code": 200, "message": "Category retrieved successfully." },
+  "data": {
+    "category": {
+      "id": 1,
+      "name": "Spices",
+      "items_count": 2,
+      "items": [
+        {
+          "id": 1,
+          "name": "Salt",
+          "storage_id": 1,
+          "storage_name": "Pantry",
+          "quantity": 5.0,
+          "unit": "oz"
+        },
+        {
+          "id": 2,
+          "name": "Pepper",
+          "storage_id": 1,
+          "storage_name": "Pantry",
+          "quantity": 3.0,
+          "unit": "oz"
+        }
+      ],
+      "created_at": "2024-10-11T13:00:00.000Z",
+      "updated_at": "2024-10-11T13:00:00.000Z"
+    }
+  }
+}
+```
+
+### Update Category
+```bash
+curl -X PATCH http://localhost:3000/api/v1/categories/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": {
+      "name": "Spices & Herbs"
+    }
+  }'
+```
+
+### Delete Category
+```bash
+curl -X DELETE http://localhost:3000/api/v1/categories/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+---
+
+## Complete Workflow: Create Item with Categories
+
+### Step 1: Create Categories (if they don't exist)
+```bash
+# Create "Spices" category
+curl -X POST http://localhost:3000/api/v1/categories \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": {
+      "name": "Spices"
+    }
+  }'
+```
+
+**Save the category ID from response (e.g., `id: 1`)**
+
+```bash
+# Create "Cooking Oils" category
+curl -X POST http://localhost:3000/api/v1/categories \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": {
+      "name": "Cooking Oils"
+    }
+  }'
+```
+
+**Save the category ID from response (e.g., `id: 2`)**
+
+### Step 2: Create Item with Categories
+```bash
+curl -X POST http://localhost:3000/api/v1/items \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "item": {
+      "name": "Olive Oil",
+      "storage_id": 1,
+      "quantity": 32,
+      "unit": "oz",
+      "min_quantity": 16,
+      "expiration_date": "2025-12-31",
+      "notes": "Extra virgin olive oil",
+      "category_ids": [1, 2]
+    }
+  }'
+```
+
+**Response:**
+```json
+{
+  "status": { "code": 201, "message": "Item created successfully." },
+  "data": {
+    "item": {
+      "id": 1,
+      "name": "Olive Oil",
+      "quantity": 32.0,
+      "unit": "oz",
+      "min_quantity": 16.0,
+      "expiration_date": "2025-12-31",
+      "notes": "Extra virgin olive oil",
+      "storage_id": 1,
+      "storage_name": "Kitchen Pantry",
+      "categories": [
+        { "id": 1, "name": "Spices" },
+        { "id": 2, "name": "Cooking Oils" }
+      ],
+      "image_url": null,
+      "location_path": "Kitchen > Pantry > Olive Oil",
+      "low_stock": false,
+      "out_of_stock": false,
+      "created_at": "2024-10-11T13:00:00.000Z",
+      "updated_at": "2024-10-11T13:00:00.000Z"
+    }
+  }
+}
+```
+
+### Step 3: Update Item Categories (Optional)
+```bash
+# Add more categories to existing item
+curl -X PATCH http://localhost:3000/api/v1/items/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "item": {
+      "category_ids": [1, 2, 3]
+    }
+  }'
+```
+
+**Note:** You can also list all categories first to see which ones exist before creating items.
+
+---
+
+## Move API
+
+Trigger these after the user selects the final destination (deepest storage).
+
+All requests require: `-H "Authorization: Bearer YOUR_JWT_TOKEN"`
+
+### Move Item to Another Storage
+```bash
+curl -X POST http://localhost:3000/api/v1/items/123/move \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "destination_storage_id": 555
+  }'
+```
+
+### Move Storage
+Move under another storage (inherits that storage's space):
+```bash
+curl -X POST http://localhost:3000/api/v1/storages/42/move \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "destination_parent_id": 10
+  }'
+```
+
+Move to the top level of a space:
+```bash
+curl -X POST http://localhost:3000/api/v1/storages/42/move \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "destination_space_id": 1
+  }'
+```
+
+**Success Response (example):**
+```json
+{
+  "status": { "code": 200, "message": "Item moved successfully." },
+  "data": { /* updated item or storage */ }
+}
 ```
 
 ---
@@ -502,7 +1095,9 @@ curl -X GET http://localhost:3000/api/v1/subscription \
     "subscription": {
       "id": 1,
       "plan": "free",
-      "pantry_limit": 10,
+      "space_limit": 1,
+      "storage_limit": 3,
+      "item_limit": 10,
       "started_at": "2024-10-11T13:00:00.000Z",
       "expires_at": null,
       "active": true,
@@ -534,7 +1129,9 @@ curl -X PATCH http://localhost:3000/api/v1/subscription \
     "subscription": {
       "id": 1,
       "plan": "premium",
-      "pantry_limit": null,
+      "space_limit": null,
+      "storage_limit": null,
+      "item_limit": null,
       "started_at": "2024-10-11T13:00:00.000Z",
       "expires_at": "2025-10-11T00:00:00.000Z",
       "active": true,
@@ -556,11 +1153,9 @@ This example shows setting up a complete bedroom inventory:
 curl -X POST http://localhost:3000/api/v1/signup \
   -H "Content-Type: application/json" \
   -d '{
-    "user": {
-      "email": "john@example.com",
-      "password": "password123",
-      "password_confirmation": "password123"
-    }
+    "email": "john@example.com",
+    "password": "password123",
+    "password_confirmation": "password123"
   }'
 ```
 

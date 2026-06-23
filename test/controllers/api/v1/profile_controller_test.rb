@@ -2,8 +2,8 @@ require "test_helper"
 
 class Api::V1::ProfileControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = users(:one)
-    @auth_token = generate_jwt_token(@user)
+    @user = User.create!(email: 'profile@example.com', password: 'password123', password_confirmation: 'password123')
+    @auth_token = get_auth_token(@user)
   end
 
   test "should get profile when authenticated" do
@@ -86,8 +86,7 @@ class Api::V1::ProfileControllerTest < ActionDispatch::IntegrationTest
           profile_image: file
         }
       },
-      headers: { 'Authorization' => "Bearer #{@auth_token}" },
-      as: :json
+      headers: { 'Authorization' => "Bearer #{@auth_token}" }
 
     assert_response :success
     json_response = JSON.parse(response.body)
@@ -123,8 +122,9 @@ class Api::V1::ProfileControllerTest < ActionDispatch::IntegrationTest
 
   private
 
-  def generate_jwt_token(user)
-    Warden::JWTAuth::UserEncoder.new.call(user, :user, nil).first
+  def get_auth_token(user)
+    post login_url, params: { user: { email: user.email, password: 'password123' } }, as: :json
+    JSON.parse(response.body)["data"]["token"]
   end
 end
 

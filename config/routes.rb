@@ -5,16 +5,22 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
+      # Dashboard endpoint
+      get 'dashboard', to: 'dashboard#index'
+      
       # Resource endpoints
       resources :spaces, only: [:index, :show, :create, :update, :destroy] do
         member do
           delete :image, action: :destroy_image
         end
+        # Nested storages for creating/listing within a space
+        resources :storages, only: [:index, :create], controller: 'storages'
       end
       
       resources :storages, only: [:index, :show, :create, :update, :destroy] do
         member do
           delete :image, action: :destroy_image
+          post :move, action: :move
         end
       end
 
@@ -25,15 +31,22 @@ Rails.application.routes.draw do
         end
         member do
           delete :image, action: :destroy_image
+          post :move, action: :move
         end
       end
+
+      # Browse endpoints for incremental selection
+      get 'browse/spaces', to: 'browse#spaces'
+      get 'browse/storages', to: 'browse#storages'
+
+      resources :categories, only: [:index, :show, :create, :update, :destroy]
 
       resources :purchase_sessions, only: [:index, :show, :create, :update, :destroy]
 
       resource :subscription, only: [:show, :update]
 
       # Profile endpoints
-      resource :profile, only: [:show, :update] do
+      resource :profile, only: [:show, :update], controller: 'profiles' do
         delete :image, action: :destroy_image
       end
     end

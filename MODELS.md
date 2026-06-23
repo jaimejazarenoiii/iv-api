@@ -85,7 +85,9 @@ JwtDenylist
 **Fields:**
 - `user_id` (integer, required, unique) - Associated user
 - `plan` (string, required, default: 'free') - Plan type (free/premium)
-- `pantry_limit` (integer) - Maximum number of pantries allowed
+- `space_limit` (integer) - Maximum number of spaces allowed (nil = unlimited)
+- `storage_limit` (integer) - Maximum number of storages allowed (nil = unlimited)
+- `item_limit` (integer) - Maximum number of items allowed (nil = unlimited)
 - `started_at` (datetime) - When subscription started
 - `expires_at` (datetime) - When subscription expires (null = never)
 
@@ -96,8 +98,8 @@ JwtDenylist
 - `active?` - Returns true if subscription hasn't expired
 
 **Default Values:**
-- Free plan: 10 pantry limit
-- Premium plan: Unlimited (nil)
+- Free plan: 1 space, 3 storages, 10 items
+- Premium plan: Unlimited for all resources (nil)
 
 ### 3. Storage
 

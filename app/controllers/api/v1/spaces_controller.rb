@@ -28,6 +28,10 @@ module Api
 
       # POST /api/v1/spaces
       def create
+        if current_user.limit_reached?(:spaces)
+          return render_limit_error(:spaces)
+        end
+
         @space = current_user.spaces.build(space_params)
 
         if @space.save
@@ -101,14 +105,13 @@ module Api
       end
 
       def space_params
-        params.require(:space).permit(:name, :space_type, :description, :image)
+        params.require(:space).permit(:name, :description, :image)
       end
 
       def space_json(space, include_storages: false)
         result = {
           id: space.id,
           name: space.name,
-          space_type: space.space_type,
           description: space.description,
           image_url: space.image_url,
           storages_count: space.storages.count,
@@ -127,6 +130,13 @@ module Api
         end
 
         result
+      end
+
+      def render_limit_error(resource)
+        render json: {
+          status: { code: 403, message: 'Limit reached for current plan.' },
+          errors: [current_user.limit_error_message(resource)]
+        }, status: :forbidden
       end
     end
   end

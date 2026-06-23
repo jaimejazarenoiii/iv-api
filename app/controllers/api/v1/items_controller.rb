@@ -2,7 +2,7 @@ module Api
   module V1
     class ItemsController < BaseController
       before_action :authenticate_user!
-      before_action :set_item, only: [:show, :update, :destroy]
+      before_action :set_item, only: [:show, :update, :destroy, :move]
 
       # GET /api/v1/items
       def index
@@ -53,8 +53,44 @@ module Api
         }, status: :ok
       end
 
+      # POST /api/v1/items/:id/move
+      # Params: destination_storage_id
+      def move
+        destination_id = params[:destination_storage_id]
+        unless destination_id.present?
+          return render json: {
+            status: { code: 422, message: 'Destination storage is required.' },
+            errors: ['destination_storage_id is missing']
+          }, status: :unprocessable_entity
+        end
+
+        destination = current_user.storages.find_by(id: destination_id)
+        unless destination
+          return render json: {
+            status: { code: 404, message: 'Destination storage not found.' },
+            errors: ['Invalid destination_storage_id']
+          }, status: :not_found
+        end
+
+        if @item.update(storage: destination)
+          render json: {
+            status: { code: 200, message: 'Item moved successfully.' },
+            data: { item: item_json(@item) }
+          }, status: :ok
+        else
+          render json: {
+            status: { code: 422, message: 'Item could not be moved.' },
+            errors: @item.errors.full_messages
+          }, status: :unprocessable_entity
+        end
+      end
+
       # POST /api/v1/items
       def create
+        if current_user.limit_reached?(:items)
+          return render_limit_error(:items)
+        end
+
         @item = current_user.items.build(item_params)
 
         if @item.save
@@ -128,7 +164,7 @@ module Api
       end
 
       def item_params
-        params.require(:item).permit(:name, :quantity, :unit, :min_quantity, :expiration_date, :notes, :storage_id, :out_of_stock_threshold, :low_stock_alert_enabled, :out_of_stock_alert_enabled, :image)
+        params.require(:item).permit(:name, :quantity, :unit, :min_quantity, :expiration_date, :notes, :storage_id, :out_of_stock_threshold, :low_stock_alert_enabled, :out_of_stock_alert_enabled, :image, category_ids: [])
       end
 
       def item_json(item)
@@ -148,11 +184,19 @@ module Api
           image_url: item.image_url,
           location_path: item.location_path,
           location_array: item.location_array,
+          categories: item.categories.map { |cat| { id: cat.id, name: cat.name } },
           low_stock: item.low_stock?,
           out_of_stock: item.out_of_stock?,
           created_at: item.created_at,
           updated_at: item.updated_at
         }
+      end
+
+      def render_limit_error(resource)
+        render json: {
+          status: { code: 403, message: 'Limit reached for current plan.' },
+          errors: [current_user.limit_error_message(resource)]
+        }, status: :forbidden
       end
     end
   end

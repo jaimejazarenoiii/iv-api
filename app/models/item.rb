@@ -3,6 +3,7 @@ class Item < ApplicationRecord
   belongs_to :storage
   has_many :purchase_items, dependent: :destroy
   has_many :purchase_sessions, through: :purchase_items
+  has_and_belongs_to_many :categories
   
   # Active Storage
   has_one_attached :image
@@ -86,6 +87,8 @@ class Item < ApplicationRecord
     
     Rails.application.routes.url_helpers.rails_blob_url(image, only_path: true)
   end
+
+  public :image_url
 
   def acceptable_image
     return unless image.attached?

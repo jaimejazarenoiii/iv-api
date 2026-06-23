@@ -17,7 +17,9 @@ class Api::V1::SubscriptionsControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     assert_equal 200, json["status"]["code"]
     assert_equal "free", json["data"]["subscription"]["plan"]
-    assert_equal 10, json["data"]["subscription"]["pantry_limit"]
+    assert_equal 1, json["data"]["subscription"]["space_limit"]
+    assert_equal 3, json["data"]["subscription"]["storage_limit"]
+    assert_equal 10, json["data"]["subscription"]["item_limit"]
     assert_equal true, json["data"]["subscription"]["active"]
   end
 
@@ -32,6 +34,9 @@ class Api::V1::SubscriptionsControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     assert_equal 200, json["status"]["code"]
     assert_equal "premium", json["data"]["subscription"]["plan"]
+    assert_nil json["data"]["subscription"]["space_limit"]
+    assert_nil json["data"]["subscription"]["storage_limit"]
+    assert_nil json["data"]["subscription"]["item_limit"]
   end
 
   test "should not allow access without authentication" do
